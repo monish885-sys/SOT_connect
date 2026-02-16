@@ -6,7 +6,8 @@
     "dev": "node --watch index.js",
     "start": "node index.js",
     "seed": "node scripts/seedUsers.js",
-    "seed:events": "node scripts/seedEvents.js"
+    "seed:events": "node scripts/seedEvents.js",
+    "verify-api": "node scripts/verify-api.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

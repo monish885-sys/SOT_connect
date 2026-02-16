@@ -6,6 +6,17 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Log 404s in console so you can see which request failed
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 404) {
+      console.warn('[API 404]', err.config?.method?.toUpperCase(), err.config?.url, err.response?.data?.message || 'Not Found');
+    }
+    return Promise.reject(err);
+  }
+);
+
 // Auth
 export const authApi = {
   register: (data) => api.post('/auth/register', data),

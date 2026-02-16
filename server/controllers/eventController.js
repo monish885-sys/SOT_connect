@@ -119,8 +119,13 @@ export const updateEvent = async (req, res, next) => {
 
 export const deleteEvent = async (req, res, next) => {
   try {
-    const event = await Event.findByIdAndDelete(req.params.id);
+    const eventId = req.params.id;
+    const event = await Event.findByIdAndDelete(eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
+    await Promise.all([
+      Attendance.deleteMany({ event: eventId }),
+      EventReminder.deleteMany({ event: eventId }),
+    ]);
     res.json({ message: 'Event deleted' });
   } catch (err) {
     next(err);
@@ -132,7 +137,7 @@ export const duplicateEvent = async (req, res, next) => {
     const original = await Event.findById(req.params.id).lean();
     if (!original) return res.status(404).json({ message: 'Event not found' });
     const { newDate } = req.body;
-    const { registeredUsers, waitlist, createdBy, _id, __v, createdAt, updatedAt, ...rest } = original;
+    const { registeredUsers, waitlist, createdBy, _id, __v, createdAt, updatedAt, registeredCount, ...rest } = original;
     const event = await Event.create({
       ...rest,
       date: newDate ? new Date(newDate) : new Date(original.date),
@@ -155,7 +160,11 @@ export const bulkUpdateEvents = async (req, res, next) => {
       return res.status(400).json({ message: 'eventIds array required' });
     }
     if (action === 'delete') {
-      await Event.deleteMany({ _id: { $in: eventIds } });
+      await Promise.all([
+        Event.deleteMany({ _id: { $in: eventIds } }),
+        Attendance.deleteMany({ event: { $in: eventIds } }),
+        EventReminder.deleteMany({ event: { $in: eventIds } }),
+      ]);
       return res.json({ message: `${eventIds.length} event(s) deleted` });
     }
     if (action === 'publish') {

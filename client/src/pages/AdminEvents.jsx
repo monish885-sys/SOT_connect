@@ -16,13 +16,18 @@ export default function AdminEvents() {
 
   const handleDelete = async (id, title) => {
     if (!confirm(`Delete "${title}"?`)) return;
-    setDeleting(id);
+    const idStr = String(id);
+    setDeleting(idStr);
     try {
-      await eventsApi.delete(id);
-      setEvents((prev) => prev.filter((e) => e._id !== id));
-      setSelected((s) => { s.delete(id); return new Set(s); });
+      await eventsApi.delete(idStr);
+      setEvents((prev) => prev.filter((e) => String(e._id) !== idStr));
+      setSelected((s) => {
+        const next = new Set(s);
+        next.delete(idStr);
+        return next;
+      });
     } catch (err) {
-      alert(err.response?.data?.message || 'Delete failed');
+      alert(err.response?.data?.message || err.message || 'Delete failed');
     } finally {
       setDeleting(null);
     }
@@ -53,32 +58,34 @@ export default function AdminEvents() {
   };
 
   const toggleSelect = (id) => {
+    const idStr = String(id);
     setSelected((s) => {
       const next = new Set(s);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(idStr)) next.delete(idStr);
+      else next.add(idStr);
       return next;
     });
   };
 
   const selectAll = () => {
     if (selected.size === events.length) setSelected(new Set());
-    else setSelected(new Set(events.map((e) => e._id)));
+    else setSelected(new Set(events.map((e) => String(e._id))));
   };
 
   const runBulk = async () => {
     if (!bulkAction || selected.size === 0) return;
+    const idList = [...selected];
     try {
-      await eventsApi.bulk(bulkAction, [...selected]);
+      await eventsApi.bulk(bulkAction, idList);
       if (bulkAction === 'delete') {
-        setEvents((prev) => prev.filter((e) => !selected.has(e._id)));
+        setEvents((prev) => prev.filter((e) => !selected.has(String(e._id))));
         setSelected(new Set());
       } else {
-        setEvents((prev) => prev.map((e) => (selected.has(e._id) ? { ...e, isDraft: bulkAction === 'unpublish' } : e)));
+        setEvents((prev) => prev.map((e) => (selected.has(String(e._id)) ? { ...e, isDraft: bulkAction === 'unpublish' } : e)));
       }
       setBulkAction('');
     } catch (err) {
-      alert(err.response?.data?.message || 'Bulk action failed');
+      alert(err.response?.data?.message || err.message || 'Bulk action failed');
     }
   };
 
@@ -136,7 +143,7 @@ export default function AdminEvents() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="w-10 py-3 px-2">
-                  <input type="checkbox" checked={events.length > 0 && selected.size === events.length} onChange={selectAll} />
+                  <input type="checkbox" checked={events.length > 0 && selected.size === events.length} onChange={selectAll} title="Select all" />
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Event</th>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Date</th>
@@ -151,7 +158,7 @@ export default function AdminEvents() {
                   <td className="py-3 px-2">
                     <input
                       type="checkbox"
-                      checked={selected.has(event._id)}
+                      checked={selected.has(String(event._id))}
                       onChange={() => toggleSelect(event._id)}
                     />
                   </td>
@@ -182,7 +189,7 @@ export default function AdminEvents() {
                       </Link>
                       <button
                         onClick={() => handleDelete(event._id, event.title)}
-                        disabled={deleting === event._id}
+                        disabled={deleting === String(event._id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50"
                         title="Delete"
                       >

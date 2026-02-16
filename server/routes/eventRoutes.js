@@ -27,8 +27,8 @@ router.get('/', optionalAuth, getEvents);
 router.get('/:id', optionalAuth, getEventById);
 router.get('/:id/related', getRelatedEvents);
 
+// POST /api/events/bulk is registered in server/index.js to avoid :id matching "bulk"
 router.post('/', verifyToken, isAdmin, createEvent);
-router.post('/bulk', verifyToken, isAdmin, bulkUpdateEvents);
 router.put('/:id', verifyToken, isAdmin, updateEvent);
 router.delete('/:id', verifyToken, isAdmin, deleteEvent);
 router.post('/:id/duplicate', verifyToken, isAdmin, duplicateEvent);
